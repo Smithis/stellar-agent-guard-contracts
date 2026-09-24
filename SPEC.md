@@ -208,6 +208,7 @@ admin's `unfreeze` (§7). This is the precise freeze/reversal boundary.
   function does `require_auth` on the account itself, so it routes through `__check_auth`, which
   verifies the agent's signature, and then records `LastHeartbeat = now`). No fund movement, no
   window accounting.
+  A re-fire within the same ledger second is a no-op: the stored value already equals now, so neither the write nor the heartbeat event is repeated (duplicate heartbeats in one ledger second carry no new information).
 - **Grace:** `dms_grace_secs` in the policy (0 disables). Recommended default on testnet proofs:
   small (e.g. 60s) so the freeze is observable; production guidance ≥ several days.
 - **Freeze mechanism:** automatic and *lazy*. There is no stored "auto-frozen" flag — rule #2

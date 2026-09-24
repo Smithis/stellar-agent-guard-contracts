@@ -297,9 +297,19 @@ impl PolicyEngine {
     /// host verifies the registered agent's signature and the engine applies
     /// the account gates, so a heartbeat after the grace window expired — or
     /// while admin-frozen — is rejected.
+    ///
+    /// Same-second re-fires are no-ops (issue #126): when the stored value
+    /// already equals `now`, neither the write nor the event is repeated —
+    /// duplicate heartbeats in one ledger second carry no new information.
+    /// The `last != 0` guard keeps the very first heartbeat (genesis,
+    /// `now == 0`) recording normally.
     pub fn heartbeat(env: Env) {
         env.current_contract_address().require_auth();
         let now = env.ledger().timestamp();
+        let last: u64 = persist_get(&env, &DataKey::LastHeartbeat).unwrap_or(0);
+        if last != 0 && last == now {
+            return;
+        }
         persist_set(&env, &DataKey::LastHeartbeat, &now);
         emit_heartbeat(&env, now);
     }
